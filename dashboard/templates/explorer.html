@@ -23,6 +23,9 @@
             <input type="checkbox" id="filter-gps"> GPS
         </label>
         <button id="btn-search" class="btn-primary">Rechercher</button>
+        <span class="filter-separator">|</span>
+        <input type="text" id="clip-search" placeholder="Recherche CLIP (ex: chien sur la plage)" style="width:250px">
+        <button id="btn-clip" class="btn-clip">CLIP</button>
         <span id="result-count" class="result-count"></span>
     </div>
 
@@ -40,7 +43,10 @@
         <button class="lightbox-close" id="lb-close">&times;</button>
         <button class="lightbox-nav lightbox-prev" id="lb-prev">&lsaquo;</button>
         <div class="lightbox-content">
-            <img id="lb-img" src="" alt="">
+            <div class="lb-image-wrapper" id="lb-image-wrapper">
+                <img id="lb-img" src="" alt="">
+                <svg id="lb-overlay" class="lb-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
         </div>
         <button class="lightbox-nav lightbox-next" id="lb-next">&rsaquo;</button>
         <div class="lightbox-meta" id="lb-meta"></div>

@@ -16,7 +16,7 @@ def list_faces(page=1, per_page=20):
         # Face clusters
         cur.execute("""
             SELECT f.id, f.cluster_label, f.age_estimate, f.gender_estimate,
-                   COUNT(pf.id) AS photo_count
+                   COUNT(pf.id) AS photo_count, f.face_type
             FROM faces f
             LEFT JOIN photo_faces pf ON pf.face_id = f.id
             GROUP BY f.id
@@ -25,13 +25,14 @@ def list_faces(page=1, per_page=20):
         """, (per_page, offset))
 
         faces = []
-        for fid, label, age, gender, count in cur.fetchall():
+        for fid, label, age, gender, count, face_type in cur.fetchall():
             faces.append({
                 "id": fid,
                 "label": label or f"Personne #{fid}",
                 "age_estimate": age,
                 "gender_estimate": gender,
                 "photo_count": count,
+                "face_type": face_type,
             })
 
         # Get sample photos for each face (first 3)
@@ -106,6 +107,22 @@ def rename_face(face_id, label):
     return {"ok": True, "face_id": face_id, "label": label}
 
 
+def update_face_type(face_id, face_type):
+    """Update the face type (personne, animal, objet, or None)."""
+    valid_types = ('personne', 'animal', 'objet', None)
+    if face_type not in valid_types:
+        return {"ok": False, "error": "Type invalide"}
+    with db_cursor() as cur:
+        cur.execute("""
+            UPDATE faces SET face_type = %s
+            WHERE id = %s RETURNING id
+        """, (face_type, face_id))
+        row = cur.fetchone()
+        if not row:
+            return None
+    return {"ok": True, "face_id": face_id, "face_type": face_type}
+
+
 def merge_faces(source_ids, target_id):
     """Merge face clusters into target. Updates photo_faces, deletes sources."""
     if target_id in source_ids:
@@ -145,6 +162,74 @@ def merge_faces(source_ids, target_id):
         "target_id": target_id,
         "new_photo_count": new_count
     }
+
+
+def assign_face_to_photo(photo_id, face_id, bbox=None):
+    """Manually assign an existing face to a photo, optionally with bounding box."""
+    with db_cursor() as cur:
+        cur.execute("SELECT id FROM faces WHERE id = %s", (face_id,))
+        if not cur.fetchone():
+            return {"ok": False, "error": "Visage introuvable"}
+
+        cur.execute("""
+            SELECT id FROM photo_faces WHERE photo_id = %s AND face_id = %s
+        """, (photo_id, face_id))
+        if cur.fetchone():
+            return {"ok": False, "error": "Visage déjà assigné à cette photo"}
+
+        if bbox and len(bbox) == 4:
+            x1, y1, x2, y2 = [int(c) for c in bbox]
+            confidence = 0.5
+        else:
+            x1, y1, x2, y2 = 0, 0, 0, 0
+            confidence = 0.0
+
+        cur.execute("""
+            INSERT INTO photo_faces (photo_id, face_id, bbox_x1, bbox_y1, bbox_x2, bbox_y2, confidence)
+            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+        """, (photo_id, face_id, x1, y1, x2, y2, confidence))
+        pf_id = cur.fetchone()[0]
+
+    return {"ok": True, "photo_face_id": pf_id}
+
+
+def create_face(label):
+    """Create a new face identity by name (manual, no embedding)."""
+    with db_cursor() as cur:
+        cur.execute("""
+            INSERT INTO faces (cluster_label)
+            VALUES (%s) RETURNING id
+        """, (label,))
+        face_id = cur.fetchone()[0]
+    return {"ok": True, "face_id": face_id, "label": label}
+
+
+def remove_face_from_photo(photo_id, face_id):
+    """Remove a face-photo association."""
+    with db_cursor() as cur:
+        cur.execute("""
+            DELETE FROM photo_faces WHERE photo_id = %s AND face_id = %s RETURNING id
+        """, (photo_id, face_id))
+        row = cur.fetchone()
+        if not row:
+            return None
+    return {"ok": True}
+
+
+def search_faces(q, limit=20):
+    """Search faces by label for autocomplete."""
+    with db_cursor() as cur:
+        cur.execute("""
+            SELECT f.id, f.cluster_label, COUNT(pf.id) as photo_count
+            FROM faces f
+            LEFT JOIN photo_faces pf ON pf.face_id = f.id
+            WHERE f.cluster_label ILIKE %s
+            GROUP BY f.id
+            ORDER BY photo_count DESC
+            LIMIT %s
+        """, (f"%{q}%", limit))
+        return [{"id": fid, "label": label or f"Personne #{fid}", "photo_count": cnt}
+                for fid, label, cnt in cur.fetchall()]
 
 
 def get_face_crop_info(face_id):

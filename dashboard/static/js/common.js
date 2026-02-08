@@ -1,8 +1,8 @@
 // Shared utilities for all Freerando pages
 
-async function fetchJSON(url) {
+async function fetchJSON(url, options) {
     try {
-        const resp = await fetch(url);
+        const resp = await fetch(url, options);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         return await resp.json();
     } catch (e) {

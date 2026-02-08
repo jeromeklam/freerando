@@ -66,7 +66,7 @@ def get_clip():
 
 
 def analyze_clip(img_pil):
-    """Return list of (tag, score) above threshold."""
+    """Return (tags, embedding). tags = list of (tag, score) above threshold. embedding = numpy float32 array."""
     import torch
 
     model, preprocess, text_features = get_clip()
@@ -83,7 +83,9 @@ def analyze_clip(img_pil):
             results.append((tag, round(score, 3)))
 
     results.sort(key=lambda x: x[1], reverse=True)
-    return results[:10]  # top 10 tags
+
+    embedding = image_features.squeeze(0).cpu().numpy().astype(np.float32)
+    return results[:10], embedding
 
 
 # --- YOLO ---
@@ -212,18 +214,21 @@ def process_clip_batch(conn, batch_size=50):
 
         try:
             img_pil, _ = load_image(fullpath)
-            tags = analyze_clip(img_pil)
+            tags, embedding = analyze_clip(img_pil)
 
             for tag, score in tags:
+                tag_fr = config.translate_tag(tag)
                 cur.execute(
                     """INSERT INTO photo_tags (photo_id, tag, score, source)
-                       VALUES (%s, %s, %s, 'clip')""",
-                    (photo_id, tag, score),
+                       VALUES (%s, %s, %s, 'clip')
+                       ON CONFLICT (photo_id, tag, source) DO NOTHING""",
+                    (photo_id, tag_fr, score),
                 )
 
+            emb_bytes = embedding_to_bytes(embedding)
             cur.execute(
-                "UPDATE photos SET clip_analyzed = TRUE, updated_at = NOW() WHERE id = %s",
-                (photo_id,),
+                "UPDATE photos SET clip_analyzed = TRUE, clip_embedding = %s, updated_at = NOW() WHERE id = %s",
+                (psycopg2.Binary(emb_bytes), photo_id),
             )
             processed += 1
         except Exception as e:
@@ -261,10 +266,12 @@ def process_yolo_batch(conn, batch_size=50):
             detections = analyze_yolo(fullpath)
 
             for label, conf in detections:
+                tag_fr = config.translate_tag(label)
                 cur.execute(
                     """INSERT INTO photo_tags (photo_id, tag, score, source)
-                       VALUES (%s, %s, %s, 'yolo')""",
-                    (photo_id, label, conf),
+                       VALUES (%s, %s, %s, 'yolo')
+                       ON CONFLICT (photo_id, tag, source) DO NOTHING""",
+                    (photo_id, tag_fr, conf),
                 )
 
             cur.execute(

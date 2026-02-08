@@ -82,15 +82,16 @@ def search_photos(tag=None, source=None, date_from=None, date_to=None,
         if photos:
             photo_ids = [p["id"] for p in photos]
             cur.execute("""
-                SELECT photo_id, tag, score, source
+                SELECT photo_id, id, tag, score, source, confirmed, label
                 FROM photo_tags
                 WHERE photo_id = ANY(%s)
-                ORDER BY score DESC
+                ORDER BY confirmed DESC, score DESC
             """, (photo_ids,))
             tags_by_photo = {}
-            for pid, tag, score, src in cur.fetchall():
+            for pid, tid, tag, score, src, conf, lbl in cur.fetchall():
                 tags_by_photo.setdefault(pid, []).append({
-                    "tag": tag, "score": float(score), "source": src
+                    "id": tid, "tag": tag, "score": float(score),
+                    "source": src, "confirmed": conf, "label": lbl
                 })
 
             # Get face count per photo
@@ -140,20 +141,25 @@ def get_photo_detail(photo_id):
             if photo.get(key) is not None:
                 photo[key] = float(photo[key])
 
-        # Tags
+        # Tags (with optional bbox)
         cur.execute("""
-            SELECT tag, score, source FROM photo_tags
-            WHERE photo_id = %s ORDER BY score DESC
+            SELECT id, tag, score, source, confirmed, label,
+                   bbox_x1, bbox_y1, bbox_x2, bbox_y2
+            FROM photo_tags
+            WHERE photo_id = %s ORDER BY confirmed DESC, score DESC
         """, (photo_id,))
         photo["tags"] = [
-            {"tag": t, "score": float(s), "source": src}
-            for t, s, src in cur.fetchall()
+            {"id": tid, "tag": t, "score": float(s), "source": src,
+             "confirmed": conf, "label": lbl,
+             "bbox": [bx1, by1, bx2, by2] if bx1 is not None else None}
+            for tid, t, s, src, conf, lbl, bx1, by1, bx2, by2 in cur.fetchall()
         ]
 
-        # Faces
+        # Faces (with face_type)
         cur.execute("""
             SELECT pf.face_id, f.cluster_label, f.age_estimate, f.gender_estimate,
-                   pf.bbox_x1, pf.bbox_y1, pf.bbox_x2, pf.bbox_y2, pf.confidence
+                   pf.bbox_x1, pf.bbox_y1, pf.bbox_x2, pf.bbox_y2, pf.confidence,
+                   f.face_type
             FROM photo_faces pf
             JOIN faces f ON f.id = pf.face_id
             WHERE pf.photo_id = %s
@@ -164,9 +170,10 @@ def get_photo_detail(photo_id):
                 "label": label or f"Personne #{fid}",
                 "age": age, "gender": gender,
                 "bbox": [x1, y1, x2, y2],
-                "confidence": float(conf)
+                "confidence": float(conf),
+                "face_type": face_type,
             }
-            for fid, label, age, gender, x1, y1, x2, y2, conf in cur.fetchall()
+            for fid, label, age, gender, x1, y1, x2, y2, conf, face_type in cur.fetchall()
         ]
 
     return photo

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Albums{% endblock %}
+
+{% block content %}
+<div class="albums-toolbar">
+    <div>
+        <span id="album-count" class="result-count"></span>
+    </div>
+    <button class="btn-primary" id="btn-new-album">+ Nouvel album</button>
+</div>
+
+<div id="albums-view">
+    <div id="albums-grid" class="albums-grid"></div>
+    <div id="albums-pagination" class="pagination-bar"></div>
+</div>
+
+<div id="album-detail-view" style="display:none">
+    <div class="album-detail-header">
+        <button class="btn-back" id="btn-back-albums">&larr; Albums</button>
+        <h3 id="album-detail-name"></h3>
+        <span id="album-detail-count" class="result-count"></span>
+        <div class="album-detail-actions">
+            <button class="btn-cancel" id="btn-delete-album">Supprimer</button>
+        </div>
+    </div>
+    <div id="album-photos-grid" class="photo-grid"></div>
+    <div id="album-photos-pagination" class="pagination-bar"></div>
+</div>
+
+<!-- Create album modal -->
+<div id="modal-new-album" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+        <h3>Nouvel album</h3>
+        <div class="modal-field">
+            <input type="text" id="new-album-name" placeholder="Nom de l'album" class="modal-input">
+        </div>
+        <div class="modal-field">
+            <textarea id="new-album-desc" placeholder="Description (optionnel)" class="modal-textarea" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="btn-cancel-album">Annuler</button>
+            <button class="btn-primary" id="btn-confirm-album">Créer</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/albums.js"></script>
+{% endblock %}

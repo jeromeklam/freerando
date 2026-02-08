@@ -67,11 +67,19 @@ yggdrasil (Pi5)                         dev (Pi5)
 - **Source** : `dashboard/` dans ce repo
 - **Service** : `freerando-dashboard.service` (systemd)
 
-### Analyse d'images (à venir)
-- **CLIP** : tags sémantiques, recherche par texte libre
-- **InsightFace** : détection et clustering de visages
-- **YOLO** : détection objets/animaux
+### Analyse d'images
+- **CLIP** : ViT-B-32, tags sémantiques FR, embeddings pour recherche texte libre
+- **InsightFace** : buffalo_l, détection/clustering visages, bboxes
+- **YOLO** : yolo11n, détection objets/animaux avec bounding boxes
+- **Installé** : `/opt/freerando-analysis/`
 - **Stockage** : résultats dans PostgreSQL/PostGIS sur dev
+- **Tables** : `photo_tags` (tag, score, source, bbox), `faces`, `photo_faces`, `albums`
+
+### Explorer (frontend)
+- **Carte** : Leaflet + MarkerCluster (photos géolocalisées)
+- **Lightbox** : SVG overlay bboxes (visages vert, tags jaune), zoom, dessin
+- **Filtres** : tag, camera, date, GPS, recherche CLIP texte libre
+- **Annotations** : toggle zones, popup onglets (Visage/Tag), type visage (personne/animal/objet)
 
 ## Commandes utiles
 
