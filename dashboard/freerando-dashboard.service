@@ -1,0 +1,20 @@
+[Unit]
+Description=Freerando Monitoring Dashboard
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=jeromeklam
+Group=www-data
+WorkingDirectory=/opt/freerando-dashboard
+ExecStart=/opt/freerando-dashboard/venv/bin/gunicorn --bind 0.0.0.0:8081 --workers 2 --timeout 30 app:app
+Environment=FLASK_APP=app.py
+EnvironmentFile=-/opt/freerando-dashboard/.env
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
