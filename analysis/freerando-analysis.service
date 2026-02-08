@@ -1,0 +1,15 @@
+[Unit]
+Description=Freerando Photo Analysis (CLIP + YOLO + InsightFace)
+After=network.target
+
+[Service]
+Type=oneshot
+User=jeromeklam
+WorkingDirectory=/opt/freerando-analysis/scripts
+ExecStart=/opt/freerando-analysis/venv/bin/python3 analyze_photos.py
+TimeoutStartSec=7200
+Nice=15
+MemoryMax=4G
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=Freerando EXIF Extraction
+After=network.target
+
+[Service]
+Type=oneshot
+User=jeromeklam
+WorkingDirectory=/opt/freerando-analysis/scripts
+ExecStart=/opt/freerando-analysis/venv/bin/python3 extract_exif.py
+TimeoutStartSec=1800
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

@@ -136,6 +136,18 @@ def extract_exif_batch(conn, batch_size=100):
     return processed
 
 
+def safe_int(val):
+    """Parse integer from EXIF, handling values like '1 5000'."""
+    if val is None:
+        return None
+    if isinstance(val, int):
+        return val
+    try:
+        return int(str(val).split()[0])
+    except (ValueError, IndexError):
+        return None
+
+
 def read_exif(filepath):
     """Read EXIF using exiftool (most reliable for HEIC)."""
     try:
@@ -175,7 +187,7 @@ def read_exif(filepath):
             "focal_length": d.get("FocalLength"),
             "aperture": d.get("FNumber"),
             "shutter_speed": str(d.get("ExposureTime")) if d.get("ExposureTime") else None,
-            "iso": d.get("ISO"),
+            "iso": safe_int(d.get("ISO")),
             "width": d.get("ImageWidth"),
             "height": d.get("ImageHeight"),
             "latitude": float(lat) if lat is not None else None,
