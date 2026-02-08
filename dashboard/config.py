@@ -20,3 +20,6 @@ PG_PASSWORD = os.environ.get("PG_PASSWORD", "freerando")
 
 # Cache TTLs (seconds)
 PHOTOS_CACHE_TTL = 300  # 5 minutes
+
+# Thumbnails
+THUMBNAIL_DIR = "/u01/photos/thumbnails"

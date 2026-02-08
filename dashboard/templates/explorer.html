@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Explorer{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+{% endblock %}
+
+{% block content %}
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <select id="filter-tag">
+            <option value="">Tous les tags</option>
+        </select>
+        <select id="filter-camera">
+            <option value="">Toutes les cameras</option>
+        </select>
+        <input type="date" id="filter-date-from" title="Date debut">
+        <input type="date" id="filter-date-to" title="Date fin">
+        <input type="text" id="filter-search" placeholder="Rechercher..." style="width:150px">
+        <label class="filter-checkbox">
+            <input type="checkbox" id="filter-gps"> GPS
+        </label>
+        <button id="btn-search" class="btn-primary">Rechercher</button>
+        <span id="result-count" class="result-count"></span>
+    </div>
+
+    <!-- Map -->
+    <div id="map" class="map-container"></div>
+
+    <!-- Photo Grid -->
+    <div id="photo-grid" class="photo-grid"></div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="pagination-bar"></div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" style="display:none">
+        <button class="lightbox-close" id="lb-close">&times;</button>
+        <button class="lightbox-nav lightbox-prev" id="lb-prev">&lsaquo;</button>
+        <div class="lightbox-content">
+            <img id="lb-img" src="" alt="">
+        </div>
+        <button class="lightbox-nav lightbox-next" id="lb-next">&rsaquo;</button>
+        <div class="lightbox-meta" id="lb-meta"></div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="/static/js/explorer.js"></script>
+{% endblock %}

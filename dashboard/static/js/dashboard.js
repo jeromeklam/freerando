@@ -1,35 +1,9 @@
+// Dashboard monitoring - uses common.js utilities
 const REFRESH_SYSTEM = 10000;
 const REFRESH_DOCKER = 15000;
 const REFRESH_PHOTOS = 300000;
 const REFRESH_PG = 60000;
-
-async function fetchJSON(url) {
-    try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        return await resp.json();
-    } catch (e) {
-        console.error(`Fetch ${url} failed:`, e);
-        return null;
-    }
-}
-
-function humanBytes(bytes) {
-    if (bytes === null || bytes === undefined) return '--';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let i = 0;
-    while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
-    return `${bytes.toFixed(1)} ${units[i]}`;
-}
-
-function humanUptime(seconds) {
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (d > 0) return `${d}j ${h}h ${m}m`;
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
-}
+const REFRESH_ANALYSIS = 30000;
 
 function diskColor(percent) {
     if (percent > 90) return 'var(--accent-red)';
@@ -48,7 +22,6 @@ async function refreshSystem() {
     const data = await fetchJSON('/api/system');
     if (!data) return;
 
-    // Temperature
     const tempEl = document.getElementById('cpu-temp');
     if (data.cpu_temp !== null) {
         tempEl.textContent = `${data.cpu_temp.toFixed(1)}°C`;
@@ -58,7 +31,6 @@ async function refreshSystem() {
         tempEl.textContent = '--';
     }
 
-    // CPU
     document.getElementById('cpu-percent').textContent = `${data.cpu_percent}%`;
     document.getElementById('cpu-freq').textContent =
         data.cpu_freq.current ? `${Math.round(data.cpu_freq.current)} MHz` : '--';
@@ -68,12 +40,10 @@ async function refreshSystem() {
         `<span class="core-badge" style="border-left:3px solid ${p > 80 ? 'var(--accent-red)' : p > 50 ? 'var(--accent-orange)' : 'var(--accent-green)'}">C${i}: ${p}%</span>`
     ).join('');
 
-    // RAM
     document.getElementById('ram-percent').textContent = `${data.ram.percent}%`;
     document.getElementById('ram-detail').textContent =
         `${humanBytes(data.ram.used)} / ${humanBytes(data.ram.total)}`;
 
-    // Disks
     const diskList = document.getElementById('disk-list');
     diskList.innerHTML = data.disks.map(d => `
         <div class="disk-entry">
@@ -86,7 +56,6 @@ async function refreshSystem() {
         </div>
     `).join('');
 
-    // Network
     document.getElementById('net-ips').innerHTML =
         Object.entries(data.network.ips).map(([nic, ip]) =>
             `<div class="net-entry"><span>${nic}</span><strong>${ip}</strong></div>`
@@ -96,10 +65,8 @@ async function refreshSystem() {
         <div class="net-entry"><span>Download</span><strong>${humanBytes(data.network.download_speed)}/s</strong></div>
     `;
 
-    // Uptime
     document.getElementById('uptime').textContent = `Uptime: ${humanUptime(data.uptime_seconds)}`;
 
-    // Charts
     updateCharts(data);
 
     document.getElementById('last-refresh').textContent =
@@ -129,7 +96,6 @@ async function refreshDocker() {
     } else {
         document.getElementById('docker-logs').textContent =
             data.logs.map(l => {
-                // Trim the docker timestamp prefix for readability
                 const parts = l.split(' ');
                 if (parts.length > 1 && parts[0].includes('T')) {
                     return parts.slice(1).join(' ');
@@ -148,7 +114,6 @@ async function refreshPhotos() {
         data.total_count.toLocaleString('fr-FR');
     document.getElementById('photo-size').textContent = data.total_size_human;
 
-    // Extensions
     if (data.by_extension && Object.keys(data.by_extension).length > 0) {
         document.getElementById('photo-extensions').textContent =
             Object.entries(data.by_extension)
@@ -157,7 +122,6 @@ async function refreshPhotos() {
                 .join('  ');
     }
 
-    // By year bars
     const maxCount = Math.max(...data.by_year.map(y => y.count), 1);
     document.getElementById('photo-by-year').innerHTML = data.by_year.map(y => `
         <div class="year-row">
@@ -169,7 +133,6 @@ async function refreshPhotos() {
         </div>
     `).join('');
 
-    // Recent files table
     if (data.recent_files.length > 0) {
         const rows = data.recent_files.map(f =>
             `<tr><td>${f.filename}</td><td>${f.modified}</td><td>${f.size_human}</td></tr>`
@@ -213,8 +176,6 @@ async function refreshPostgres() {
 }
 
 // --- ANALYSIS ---
-const REFRESH_ANALYSIS = 30000;
-
 function progressBar(done, total, color) {
     const pct = total > 0 ? Math.round(done / total * 100) : 0;
     return `
@@ -241,7 +202,6 @@ async function refreshAnalysis() {
 
     const t = data.totals;
 
-    // Pipeline progress
     document.getElementById('analysis-progress').innerHTML = `
         <div class="progress-item">
             <span class="progress-label">EXIF</span>
@@ -267,7 +227,6 @@ async function refreshAnalysis() {
         </div>
     `;
 
-    // Top CLIP tags
     if (data.top_clip_tags.length > 0) {
         document.getElementById('analysis-clip-tags').innerHTML =
             data.top_clip_tags.map(t =>
@@ -278,7 +237,6 @@ async function refreshAnalysis() {
             '<span style="color:var(--text-secondary);font-size:0.8rem">En attente...</span>';
     }
 
-    // Top YOLO detections
     if (data.top_yolo_tags.length > 0) {
         document.getElementById('analysis-yolo-tags').innerHTML =
             data.top_yolo_tags.map(t =>
@@ -289,7 +247,6 @@ async function refreshAnalysis() {
             '<span style="color:var(--text-secondary);font-size:0.8rem">En attente...</span>';
     }
 
-    // Faces
     const facesEl = document.getElementById('analysis-faces');
     if (data.unique_faces > 0) {
         let html = `<div style="margin-bottom:0.5rem;font-size:0.85rem"><strong style="color:var(--accent-green)">${data.unique_faces}</strong> visages uniques</div>`;

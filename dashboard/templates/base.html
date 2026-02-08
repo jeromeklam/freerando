@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freerando - {% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>Freerando</h1>
+            <nav class="nav-tabs">
+                <a href="/dashboard" class="tab{% if active_tab == 'dashboard' %} active{% endif %}">Monitoring</a>
+                <a href="/explorer" class="tab{% if active_tab == 'explorer' %} active{% endif %}">Explorer</a>
+                <a href="/faces" class="tab{% if active_tab == 'faces' %} active{% endif %}">Visages</a>
+            </nav>
+        </div>
+        <div id="header-info">
+            {% block header_info %}{% endblock %}
+        </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <script src="/static/js/common.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

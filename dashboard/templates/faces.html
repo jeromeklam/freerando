@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Visages{% endblock %}
+
+{% block content %}
+    <!-- Toolbar -->
+    <div class="faces-toolbar">
+        <div class="faces-toolbar-left">
+            <span id="faces-total" class="result-count"></span>
+        </div>
+        <div class="faces-toolbar-right">
+            <button id="btn-merge" class="btn-merge" disabled>Fusionner la sélection</button>
+        </div>
+    </div>
+
+    <!-- Face grid -->
+    <div id="faces-grid" class="faces-grid"></div>
+
+    <!-- Pagination -->
+    <div id="faces-pagination" class="pagination-bar"></div>
+
+    <!-- Face photos panel (hidden by default) -->
+    <div id="face-photos-panel" class="face-photos-panel" style="display:none">
+        <div class="face-photos-header">
+            <button id="btn-back-faces" class="btn-back">&larr; Retour</button>
+            <h3 id="face-photos-title"></h3>
+            <span id="face-photos-count" class="result-count"></span>
+        </div>
+        <div id="face-photos-grid" class="photo-grid"></div>
+        <div id="face-photos-pagination" class="pagination-bar"></div>
+    </div>
+
+    <!-- Merge confirm modal -->
+    <div id="merge-modal" class="modal-overlay" style="display:none">
+        <div class="modal-box">
+            <h3>Fusionner les visages</h3>
+            <p id="merge-modal-text"></p>
+            <div class="modal-actions">
+                <button id="merge-cancel" class="btn-cancel">Annuler</button>
+                <button id="merge-confirm" class="btn-primary">Fusionner</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="/static/js/faces.js"></script>
+{% endblock %}
