@@ -97,6 +97,29 @@
             <h3 style="font-size:0.85rem;color:var(--text-secondary);margin:0.8rem 0 0.3rem">Derniers fichiers</h3>
             <table class="data-table" id="photo-recent-table"></table>
         </section>
+        <!-- Analysis Pipeline -->
+        <section class="card card-full">
+            <h2>Analyse des photos</h2>
+            <div id="analysis-error" style="color:var(--accent-red);display:none"></div>
+            <div class="analysis-grid">
+                <div class="analysis-pipeline">
+                    <h3 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Pipeline</h3>
+                    <div id="analysis-progress"></div>
+                </div>
+                <div class="analysis-tags">
+                    <h3 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Top tags CLIP</h3>
+                    <div id="analysis-clip-tags"></div>
+                </div>
+                <div class="analysis-yolo">
+                    <h3 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Detections YOLO</h3>
+                    <div id="analysis-yolo-tags"></div>
+                </div>
+                <div class="analysis-faces">
+                    <h3 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">Visages</h3>
+                    <div id="analysis-faces"></div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="/static/js/charts.js"></script>

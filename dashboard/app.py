@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template
-from collectors import system, docker_status, icloud_sync, postgres_status
+from collectors import system, docker_status, icloud_sync, postgres_status, analysis_status
 import config
 
 app = Flask(__name__)
@@ -30,6 +30,11 @@ def api_postgres():
     return jsonify(postgres_status.collect())
 
 
+@app.route("/api/analysis")
+def api_analysis():
+    return jsonify(analysis_status.collect())
+
+
 @app.route("/api/all")
 def api_all():
     return jsonify({
@@ -37,6 +42,7 @@ def api_all():
         "docker": docker_status.collect(),
         "photos": icloud_sync.collect(),
         "postgres": postgres_status.collect(),
+        "analysis": analysis_status.collect(),
     })
 
 

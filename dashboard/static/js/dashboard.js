@@ -212,17 +212,115 @@ async function refreshPostgres() {
     }
 }
 
+// --- ANALYSIS ---
+const REFRESH_ANALYSIS = 30000;
+
+function progressBar(done, total, color) {
+    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+    return `
+        <div class="progress-item">
+            <div class="progress-bar-mini">
+                <div class="progress-bar-mini-fill" style="width:${pct}%;background:${color}"></div>
+            </div>
+            <span>${done.toLocaleString('fr-FR')} / ${total.toLocaleString('fr-FR')}</span>
+        </div>
+    `;
+}
+
+async function refreshAnalysis() {
+    const data = await fetchJSON('/api/analysis');
+    if (!data) return;
+
+    const errEl = document.getElementById('analysis-error');
+    if (data.error) {
+        errEl.textContent = data.error;
+        errEl.style.display = 'block';
+        return;
+    }
+    errEl.style.display = 'none';
+
+    const t = data.totals;
+
+    // Pipeline progress
+    document.getElementById('analysis-progress').innerHTML = `
+        <div class="progress-item">
+            <span class="progress-label">EXIF</span>
+            ${progressBar(t.exif_done, t.total_photos, 'var(--accent-green)')}
+        </div>
+        <div class="progress-item">
+            <span class="progress-label">CLIP</span>
+            ${progressBar(t.clip_done, t.total_photos, 'var(--accent-blue)')}
+        </div>
+        <div class="progress-item">
+            <span class="progress-label">YOLO</span>
+            ${progressBar(t.yolo_done, t.total_photos, 'var(--accent-orange)')}
+        </div>
+        <div class="progress-item">
+            <span class="progress-label">Visages</span>
+            ${progressBar(t.face_done, t.total_photos, '#9b59b6')}
+        </div>
+        <div style="margin-top:0.6rem;font-size:0.8rem;color:var(--text-secondary)">
+            <div class="metric-row"><span>Photos avec GPS</span><strong style="color:var(--accent-green)">${t.with_gps.toLocaleString('fr-FR')}</strong></div>
+            <div class="metric-row"><span>Photos avec date</span><strong>${t.with_date.toLocaleString('fr-FR')}</strong></div>
+            <div class="metric-row"><span>Tags CLIP</span><strong>${(data.tag_counts.clip || 0).toLocaleString('fr-FR')}</strong></div>
+            <div class="metric-row"><span>Detections YOLO</span><strong>${(data.tag_counts.yolo || 0).toLocaleString('fr-FR')}</strong></div>
+        </div>
+    `;
+
+    // Top CLIP tags
+    if (data.top_clip_tags.length > 0) {
+        document.getElementById('analysis-clip-tags').innerHTML =
+            data.top_clip_tags.map(t =>
+                `<span class="tag-chip">${t.tag}<span class="tag-count">${t.count}</span></span>`
+            ).join('');
+    } else {
+        document.getElementById('analysis-clip-tags').innerHTML =
+            '<span style="color:var(--text-secondary);font-size:0.8rem">En attente...</span>';
+    }
+
+    // Top YOLO detections
+    if (data.top_yolo_tags.length > 0) {
+        document.getElementById('analysis-yolo-tags').innerHTML =
+            data.top_yolo_tags.map(t =>
+                `<span class="tag-chip">${t.tag}<span class="tag-count">${t.count}</span></span>`
+            ).join('');
+    } else {
+        document.getElementById('analysis-yolo-tags').innerHTML =
+            '<span style="color:var(--text-secondary);font-size:0.8rem">En attente...</span>';
+    }
+
+    // Faces
+    const facesEl = document.getElementById('analysis-faces');
+    if (data.unique_faces > 0) {
+        let html = `<div style="margin-bottom:0.5rem;font-size:0.85rem"><strong style="color:var(--accent-green)">${data.unique_faces}</strong> visages uniques</div>`;
+        html += data.face_clusters.map(f => `
+            <div class="face-item">
+                <div>
+                    <span class="face-label">${f.label}</span>
+                    <span class="face-meta">${f.gender}, ~${f.age} ans</span>
+                </div>
+                <span class="face-count">${f.photo_count} photos</span>
+            </div>
+        `).join('');
+        facesEl.innerHTML = html;
+    } else {
+        facesEl.innerHTML = '<span style="color:var(--text-secondary);font-size:0.8rem">En attente...</span>';
+    }
+}
+
 // --- INIT ---
 async function init() {
     refreshSystem();
     refreshDocker();
     refreshPhotos();
     refreshPostgres();
+    refreshAnalysis();
 
     setInterval(refreshSystem, REFRESH_SYSTEM);
     setInterval(refreshDocker, REFRESH_DOCKER);
     setInterval(refreshPhotos, REFRESH_PHOTOS);
     setInterval(refreshPostgres, REFRESH_PG);
+    setInterval(refreshAnalysis, REFRESH_ANALYSIS);
 }
 
 document.addEventListener('DOMContentLoaded', init);
